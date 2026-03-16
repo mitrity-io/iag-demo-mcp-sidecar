@@ -41,10 +41,18 @@ class MCPClient:
             msg["params"] = params
         self.process.stdin.write(json.dumps(msg) + "\n")
         self.process.stdin.flush()
-        resp_line = self.process.stdout.readline()
-        if not resp_line:
-            return None
-        return json.loads(resp_line)
+        # Read lines until we get a JSON-RPC response.
+        # The sidecar writes log lines to stdout alongside protocol messages.
+        while True:
+            resp_line = self.process.stdout.readline()
+            if not resp_line:
+                return None
+            resp_line = resp_line.strip()
+            if not resp_line:
+                continue
+            if resp_line.startswith("{"):
+                return json.loads(resp_line)
+            # Skip non-JSON lines (sidecar log output).
 
     def _notify(self, method: str, params: dict | None = None) -> None:
         msg = {"jsonrpc": "2.0", "method": method}
