@@ -14,13 +14,9 @@ Before running the demo, configure these in your MITRITY dashboard:
 
 ### 1. Register an agent
 
-Create an agent (e.g., "demo-agent") with mission scope "workspace file management and system operations". Copy the **Agent ID** (UUID).
+Create an agent (e.g., "demo-agent") with mission scope "workspace file management and system operations". Copy the **Agent ID** (UUID) and the **Agent Key** (`ak_...`).
 
-### 2. Register an edge node
-
-Create an edge node (e.g., "demo-sidecar"). Copy the **Edge Node ID** and **Edge Node Key** (`mit_...`).
-
-### 3. Create policies
+### 2. Create policies
 
 | Policy | Type | Pattern | Scope |
 |--------|------|---------|-------|
@@ -43,7 +39,7 @@ git clone git@github.com:mitrity-io/iag-demo-mcp-sidecar.git
 cd iag-demo-mcp-sidecar
 cp .env.example .env
 
-# Edit .env with your API keys and IDs
+# Edit .env with your ANTHROPIC_API_KEY and MITRITY_AGENT_KEY
 
 docker compose up --build
 ```
@@ -90,9 +86,8 @@ The sidecar connects to your MITRITY control plane via HTTPS for policy evaluati
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `ANTHROPIC_API_KEY` | Yes | Anthropic API key for Claude |
-| `MITRITY_EDGE_API_KEY` | Yes | Edge node key from dashboard |
+| `MITRITY_AGENT_KEY` | Yes | Agent key from dashboard |
 | `MITRITY_CONTROL_PLANE_URL` | Yes | Control plane URL |
-| `MITRITY_EDGE_NODE_ID` | Yes | Edge node UUID from dashboard |
 | `MITRITY_AGENT_ID` | Yes | Agent UUID from dashboard |
 | `MITRITY_DEMO_SPEED` | No | `normal` (default) or `fast` |
 | `ANTHROPIC_MODEL` | No | Claude model (default: `claude-sonnet-4-20250514`) |
