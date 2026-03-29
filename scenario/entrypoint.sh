@@ -10,6 +10,9 @@ for var in ANTHROPIC_API_KEY MITRITY_AGENT_KEY MITRITY_CONTROL_PLANE_URL MITRITY
     fi
 done
 
+# Export sidecar version for the demo runner.
+export MITRITY_SIDECAR_VERSION=$(/usr/local/bin/mitrity-mcp-sidecar -version 2>/dev/null || echo "unknown")
+
 # Render the sidecar config template with env vars.
 envsubst < /etc/mitrity/sidecar.yaml.tmpl > /etc/mitrity/sidecar.yaml
 
