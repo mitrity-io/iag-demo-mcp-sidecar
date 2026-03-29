@@ -171,6 +171,8 @@ class DemoAgent:
 
 
 def main():
+    version = os.environ.get("MITRITY_SIDECAR_VERSION", "unknown")
+
     console.print()
     console.print(
         "[bold cyan]MITRITY MCP Sidecar — Governance Demo[/bold cyan]",
@@ -180,6 +182,7 @@ def main():
         "[dim]Demonstrating real-time AI agent governance with policy enforcement[/dim]",
         justify="center",
     )
+    console.print(f"[dim]Sidecar version: {version}[/dim]", justify="center")
     console.print()
 
     info("Starting MCP Sidecar...")
