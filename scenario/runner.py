@@ -6,6 +6,7 @@ with the MCP Sidecar wrapping the upstream tool server.
 
 import json
 import os
+import signal
 import subprocess
 import time
 
@@ -98,7 +99,12 @@ class MCPClient:
     def close(self) -> None:
         if self.process.poll() is None:
             self.process.stdin.close()
-            self.process.wait(timeout=5)
+            self.process.send_signal(signal.SIGTERM)
+            try:
+                self.process.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                self.process.kill()
+                self.process.wait(timeout=2)
 
 
 class DemoAgent:
