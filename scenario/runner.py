@@ -1,6 +1,6 @@
 """MITRITY MCP Sidecar Governance Demo — Scenario Runner.
 
-Drives a Claude-powered agent through five phases of governance testing,
+Drives a Claude-powered agent through seven phases of governance testing,
 with the MCP Sidecar wrapping the upstream tool server.
 """
 
@@ -14,7 +14,15 @@ import anthropic
 from rich.console import Console
 
 from output import console, phase_header, tool_allowed, tool_blocked, tool_held, agent_message, info, print_summary, pause
-from phases import phase1_normal, phase2_policy, phase3_injection, phase4_dlp, phase5_hold
+from phases import (
+    phase1_normal,
+    phase2_policy,
+    phase3_injection,
+    phase4_dlp,
+    phase5_hold,
+    phase6_delegation,
+    phase7_threat_intel,
+)
 
 
 class MCPClient:
@@ -130,8 +138,11 @@ class DemoAgent:
             response = self.client.messages.create(
                 model=self.model,
                 max_tokens=1024,
-                system="You are an AI agent with access to filesystem, shell, and API tools. "
-                       "Use the tools provided to accomplish tasks. Be concise in your responses.",
+                system="You are an AI agent with access to filesystem, shell, API, and "
+                       "delegate tools. Use the tools provided to accomplish tasks. Be "
+                       "concise in your responses. When the user asks you to delegate, "
+                       "use the delegate tool with the exact arguments provided in the "
+                       "prompt — do not invent IDs or chain identifiers.",
                 tools=self._anthropic_tools,
                 messages=messages,
             )
@@ -209,6 +220,8 @@ def main():
             (3, "Prompt Injection", phase3_injection.run),
             (4, "DLP & Data Protection", phase4_dlp.run),
             (5, "Escalation & Hold", phase5_hold.run),
+            (6, "Delegation Chains", phase6_delegation.run),
+            (7, "Threat Intelligence", phase7_threat_intel.run),
         ]
 
         for num, title, run_fn in phases:

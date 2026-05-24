@@ -46,7 +46,7 @@ docker compose up --build
 
 ## What the Demo Does
 
-The demo runs five phases (~10 minutes total):
+The demo runs seven phases (~15 minutes total):
 
 **Phase 1 — Normal Operations**: Read files, list directories, run safe commands, call APIs. All allowed.
 
@@ -57,6 +57,10 @@ The demo runs five phases (~10 minutes total):
 **Phase 4 — DLP & Data Protection**: Write files with API keys, send PII in notifications. DLP blocks exfiltration.
 
 **Phase 5 — Escalation & Hold**: Attempt production deployment. Hold policy pauses action for dashboard approval.
+
+**Phase 6 — Delegation Chains**: Record a series of agent-to-agent delegation hops via the `delegate` tool. The sidecar's delegation engine flags depth violations (chains > 5 hops) and circular delegation (an agent appearing twice). Unauthorized-delegate and privilege-escalation sub-scenarios need additional per-agent backend config (`disallowed_delegates`, registered agents with broader `tool_permissions`) — without it they run as clean delegations. Open `/app/delegation-chains` to inspect.
+
+**Phase 7 — Threat Intelligence**: Trigger actions matching threat-intelligence indicators (file reads, shell commands, API calls). The sidecar evaluates each match against the tenant's per-severity policy and per-indicator overrides (block / alert / log / silent-suppress). Requires the demo tenant subscribed to a feed with matching indicator patterns; without that seed, actions land in the audit log normally with no threat matches. Open `/app/threat-intel` to inspect.
 
 ## Architecture
 
