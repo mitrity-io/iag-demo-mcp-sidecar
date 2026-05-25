@@ -76,12 +76,16 @@ The sidecar connects to your MITRITY control plane via HTTPS for policy evaluati
 
 ## Gateway vs Sidecar
 
+Both binaries share the same governance core. Threat intelligence, delegation chains, DLP, prompt injection detection, ML drift scoring, and hold/approval workflows all run identically in either deployment — they're implemented in a shared `internal/interceptor` package. The architectural difference is **where each sits in the MCP request path**:
+
 | | MCP Sidecar (this demo) | [MCP Gateway](https://github.com/mitrity-io/iag-demo-mcp-gateway) |
 |---|---|---|
-| **Role** | Wraps an existing MCP server | Is the MCP server |
-| **Credentials** | Agent holds its own keys | Gateway holds credentials |
-| **Tool sources** | 1 upstream | Multiple upstreams + native HTTP |
-| **Best for** | Quick retrofit onto existing setups | Production with credential isolation |
+| **Role** | Transparent proxy in front of one existing MCP server | Is the MCP server, aggregating many sources |
+| **Tool sources** | Single upstream subprocess | Multiple upstreams + native HTTP tools defined in config |
+| **MCP protocol** | Passes through unchanged; intercepts only `tools/call` | Owns the catalog, applies namespace prefixes (`fs:read_file`, `shell:run_command`) |
+| **Best for** | Retrofitting governance onto an existing MCP server without changing the agent | Aggregating many tool sources behind one governed endpoint |
+
+> **Credential broker injection** is on the roadmap for both binaries with hot rotation as a day-one feature. See [credential-injection-plan-2026-05-25.md](https://github.com/mitrity-io/iag-config/blob/main/credential-injection-plan-2026-05-25.md) for the sprint plan. Today, both binaries perform credential checkout and decryption via the broker; injection into outbound tool calls is partly wired (gateway native HTTP only) and lands fully in Sprints 3–4.
 
 ## Environment Variables
 
