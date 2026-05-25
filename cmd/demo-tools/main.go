@@ -4,9 +4,12 @@ package main
 
 import (
 	"bufio"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -201,6 +204,29 @@ func getAllTools() []tool {
 				"required": []string{"channel", "message"},
 			},
 		},
+		// connect_database — Phase 6 (credential broker demo).
+		//
+		// The connection_string arg is expected to carry a
+		// ${credential:demo_db_password} placeholder that the MITRITY
+		// sidecar substitutes BEFORE this tool runs. If we see a raw
+		// placeholder reach the tool, injection mis-wired and we fail
+		// loudly; otherwise we redact the password and return a short
+		// hash so the demo can prove substitution worked AND prove
+		// rotation produced a new value.
+		{
+			Name:        "connect_database",
+			Description: "Open a database connection with the given connection string. Demonstrates MITRITY credential broker substitution of ${credential:demo_db_password} placeholders.",
+			InputSchema: map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"connection_string": map[string]any{
+						"type":        "string",
+						"description": "Database URL (e.g., postgres://user:${credential:demo_db_password}@host:5432/db)",
+					},
+				},
+				"required": []string{"connection_string"},
+			},
+		},
 	}
 }
 
@@ -223,6 +249,8 @@ func handleToolCall(req *request) interface{} {
 		result, err = handleShellTool(params.Arguments)
 	case "call_api", "query_database", "send_notification":
 		result, err = handleAPITool(params.Name, params.Arguments)
+	case "connect_database":
+		result, err = handleConnectDatabase(params.Arguments)
 	default:
 		err = fmt.Errorf("unknown tool: %s", params.Name)
 	}
@@ -336,6 +364,44 @@ func handleAPITool(name string, args map[string]any) (string, error) {
 		return fmt.Sprintf("[MOCK] Notification sent to %s: \"%s\"", channel, message), nil
 	}
 	return "", fmt.Errorf("unknown api tool: %s", name)
+}
+
+// handleConnectDatabase is Phase 6's mock target. The MITRITY sidecar
+// is expected to substitute any ${credential:demo_db_password}
+// placeholder in connection_string before this function runs. If a
+// raw placeholder reaches us, injection is mis-wired and we fail
+// loudly. On success we redact the password and return a short hash
+// of it so the demo can prove that:
+//
+//  1. Substitution happened (no placeholder visible in output).
+//  2. The value actually flowed through (hash != hash of placeholder).
+//  3. Rotation works (hash changes between runs after rotating in
+//     the dashboard).
+func handleConnectDatabase(args map[string]any) (string, error) {
+	conn, _ := args["connection_string"].(string)
+	if conn == "" {
+		return "", fmt.Errorf("connection_string is required")
+	}
+	if strings.Contains(conn, "${credential:") {
+		return "", fmt.Errorf("connection_string still contains an unresolved credential placeholder — sidecar credential injection appears mis-wired (credentials.injection_enabled? grant configured?)")
+	}
+	u, err := url.Parse(conn)
+	if err != nil {
+		return "", fmt.Errorf("parse connection_string: %w", err)
+	}
+	password, _ := u.User.Password()
+	if password == "" {
+		return "", fmt.Errorf("connection_string has no password component to verify substitution")
+	}
+	sum := sha256.Sum256([]byte(password))
+	hash := hex.EncodeToString(sum[:])[:12]
+	// Redact the password from the connection string before echoing
+	// it back so the demo log doesn't leak the secret.
+	redacted := strings.Replace(conn, ":"+password+"@", ":***@", 1)
+	return fmt.Sprintf(
+		"[MOCK] Connected to %s\n  → password hash: %s (substitution verified)\n  → after rotation this hash will change without restarting the agent",
+		redacted, hash,
+	), nil
 }
 
 func writeJSON(f *os.File, v interface{}) {

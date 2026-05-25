@@ -46,7 +46,7 @@ docker compose up --build
 
 ## What the Demo Does
 
-The demo runs five phases (~10 minutes total):
+The demo runs six phases (~12 minutes total):
 
 **Phase 1 — Normal Operations**: Read files, list directories, run safe commands, call APIs. All allowed.
 
@@ -58,7 +58,25 @@ The demo runs five phases (~10 minutes total):
 
 **Phase 5 — Escalation & Hold**: Attempt production deployment. Hold policy pauses action for dashboard approval.
 
+**Phase 6 — Credential Broker + Hot Rotation**: Agent calls `connect_database` with `${credential:demo_db_password}` in the connection string. The sidecar resolves the placeholder via the broker; the tool returns the password hash. Mid-phase, you rotate the credential in the dashboard — the next call picks up the new value within 30 seconds with no agent or sidecar restart. Requires backend setup (see below). The `${credential:nonexistent_cred}` sub-step demonstrates fail-closed behavior.
+
 > **Delegation chains and threat intelligence** are demonstrated in a separate, multi-container demo at [iag-demo-multi-agent](https://github.com/mitrity-io/iag-demo-multi-agent). That demo runs three governed agents in parallel containers (orchestrator + two workers) and produces real worker-to-worker delegation hops and threat-intel matches against the built-in indicator catalog. Pro/Enterprise plan required.
+
+### Phase 6 prerequisites (credential broker)
+
+Before running the demo, provision a credential in your tenant:
+
+1. Open the MITRITY dashboard at `mitrity.com/app/credentials`.
+2. Click **+ New Credential**:
+   - **Name**: `demo_db_password`
+   - **Type**: `db_password`
+   - **Value**: any string (e.g., `s3cret-initial`)
+   - **Max TTL**: 30 minutes
+3. Click **+ Grant** on the credential and grant it to your demo agent with operation `read`.
+
+Phase 6's mid-scenario rotation step asks you to rotate the credential in the dashboard. Click the credential, then **Rotate Value**, enter a new value (e.g., `s3cret-rotated`), and save. Press Enter in the demo to continue — the next call should show a different password hash within 30 seconds.
+
+If you skip this setup, Phase 6 runs the fail-closed path only — `connect_database` calls return `credential.unresolvable` (JSON-RPC -32002) and the upstream tool never sees them. Phases 1–5 are unaffected.
 
 ## Architecture
 
@@ -69,7 +87,8 @@ Docker Container
         └── demo-tools (MCP server with all tools)
             ├── read_file, write_file, list_directory, delete_file
             ├── run_command
-            └── call_api, query_database, send_notification
+            ├── call_api, query_database, send_notification
+            └── connect_database (Phase 6 — broker-substituted credential)
 ```
 
 The sidecar connects to your MITRITY control plane via HTTPS for policy evaluation, event reporting, and heartbeat.
