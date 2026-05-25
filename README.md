@@ -104,7 +104,9 @@ Both binaries share the same governance core. Threat intelligence, delegation ch
 | **MCP protocol** | Passes through unchanged; intercepts only `tools/call` | Owns the catalog, applies namespace prefixes (`fs:read_file`, `shell:run_command`) |
 | **Best for** | Retrofitting governance onto an existing MCP server without changing the agent | Aggregating many tool sources behind one governed endpoint |
 
-> **Credential broker injection** is on the roadmap for both binaries with hot rotation as a day-one feature. See [credential-injection-plan-2026-05-25.md](https://github.com/mitrity-io/iag-config/blob/main/credential-injection-plan-2026-05-25.md) for the sprint plan. Today, both binaries perform credential checkout and decryption via the broker; injection into outbound tool calls is partly wired (gateway native HTTP only) and lands fully in Sprints 3–4.
+> **Credential broker injection** is **shipped on both binaries** with hot rotation. Sidecar: `${credential:<id>}` placeholders in upstream MCP tool args + opt-in file mounts for legacy tools that read credentials from disk. Gateway: same, plus `${credential:<id>}` in native HTTP headers / URL / body templates. Both honor heartbeat-etag invalidation so rotation propagates within 30 seconds without restarting the agent or the wrapper. See [Phase 6 prerequisites](#phase-6-prerequisites-credential-broker) above for the live walkthrough, or [credential-injection-plan-2026-05-25.md](https://github.com/mitrity-io/iag-config/blob/main/credential-injection-plan-2026-05-25.md) for the contract.
+
+> **Multi-agent governance?** See [iag-demo-multi-agent](https://github.com/mitrity-io/iag-demo-multi-agent) for a three-container compose stack showing real agent-to-agent delegation, per-agent threat intel, and per-agent credential scoping.
 
 ## Environment Variables
 
