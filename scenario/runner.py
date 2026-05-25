@@ -20,6 +20,7 @@ from phases import (
     phase3_injection,
     phase4_dlp,
     phase5_hold,
+    phase6_credential_broker,
 )
 
 
@@ -216,6 +217,7 @@ def main():
             (3, "Prompt Injection", phase3_injection.run),
             (4, "DLP & Data Protection", phase4_dlp.run),
             (5, "Escalation & Hold", phase5_hold.run),
+            (6, "Credential Broker + Hot Rotation", phase6_credential_broker.run),
         ]
 
         for num, title, run_fn in phases:
